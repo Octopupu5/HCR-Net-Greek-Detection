@@ -29,8 +29,8 @@ def visualize_bboxes(image, bboxes):
     
     plt.show()
 
-image_path = 'output/image_0.png'
-bbox_path = 'output/image_0.json'
+image_path = 'output/train/image_0.png'
+bbox_path = 'output/train/image_0.json'
 
 image = load_image(image_path)
 bboxes = load_bboxes(bbox_path)

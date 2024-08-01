@@ -4,7 +4,7 @@ import numpy as np
 import random
 import json
 
-data_dir = 'Query'
+data_dir = '../Query'
 
 final_image_size = 448
 
@@ -36,6 +36,49 @@ def add_dark_spots(image, num_spots=50, spot_intensity=50):
         y = random.randint(0, row - 1)
         radius = random.randint(0, 1)
         image[y-radius:y+radius, x-radius:x+radius] = random.randint(0, spot_intensity)
+    return image
+
+def add_dashed_lines(image, num_lines=10, max_length=50):
+    row, col = image.shape
+    for _ in range(num_lines):
+        x_start = random.randint(0, col - 1)
+        y_start = random.randint(0, row - 1)
+        length = random.randint(5, max_length)
+        thickness = random.randint(1, 3)
+        gap = random.randint(1, 5)
+        color = random.choice([0, 255])
+        orientation = random.choice(['horizontal', 'vertical'])
+
+        if orientation == 'horizontal':
+            x_end = min(col, x_start + length)
+            for x in range(x_start, x_end, gap + thickness):
+                cv2.line(image, (x, y_start), (min(col, x + thickness), y_start), color, 1)
+        else:
+            y_end = min(row, y_start + length)
+            for y in range(y_start, y_end, gap + thickness):
+                cv2.line(image, (x_start, y), (x_start, min(row, y + thickness)), color, 1)
+
+    return image
+
+def add_curved_lines(image, num_lines=10, max_points=100, max_distance=70):
+    row, col = image.shape
+    for _ in range(num_lines):
+        start_x = random.randint(0, col)
+        start_y = random.randint(0, row)
+        end_x = random.randint(max(0, start_x - max_distance), min(col, start_x + max_distance))
+        end_y = random.randint(max(0, start_y - max_distance), min(row, start_y + max_distance))
+        curvature = random.uniform(-0.5, 0.5)
+        color = random.choice([0, 255])
+        thickness = random.randint(1, 3)
+
+        points = []
+        for t in np.linspace(0, 1, max_points):
+            x = int((1 - t) * start_x + t * end_x + curvature * t * (1 - t) * col / 10)
+            y = int((1 - t) * start_y + t * end_y + curvature * t * (1 - t) * row / 10)
+            points.append([x, y])
+
+        points = np.array(points, np.int32).reshape((-1, 1, 2))
+        cv2.polylines(image, [points], False, color, thickness)
     return image
 
 def is_overlapping(bbox1, bbox2):
@@ -73,7 +116,7 @@ def create_image_with_symbols(symbol_folders, num_symbols=10):
             if all(not is_overlapping(new_bbox, bbox["bbox"]) for bbox in bounding_boxes):
                 final_image[top_left_y:top_left_y + symbol_size, top_left_x:top_left_x + symbol_size] = symbol_img
                 bounding_boxes.append({
-                    "class": folder.split('_')[-1],
+                    "class": folder.split('_')[-1] + folder.split('_')[-2],
                     "bbox": new_bbox
                 })
                 placed = True
@@ -84,8 +127,11 @@ def create_image_with_symbols(symbol_folders, num_symbols=10):
 
     final_image = add_noise(final_image, -50, 200)
 
-    final_image = add_dark_spots(final_image, num_spots = 1000, spot_intensity = 10)
-    final_image = add_dark_spots(final_image, num_spots = 500, spot_intensity = 30)
+    final_image = add_dark_spots(final_image, num_spots=1000, spot_intensity=10)
+    final_image = add_dark_spots(final_image, num_spots=500, spot_intensity=30)
+    
+    final_image = add_dashed_lines(final_image, num_lines=15, max_length=100)
+    final_image = add_curved_lines(final_image, num_lines=10)
 
     return final_image, bounding_boxes
 
@@ -94,11 +140,11 @@ def save_image_with_bboxes(image, bboxes, image_path, bbox_path):
     with open(bbox_path, 'w') as f:
         json.dump(bboxes, f)
 
-num_samples = 1
-output_dir = 'output'
+num_samples = 400
+output_dir = './output/train'
 
 if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
+    raise "Такой директории нет"
 
 for i in range(num_samples):
     image, bboxes = create_image_with_symbols(symbol_folders, 20)
