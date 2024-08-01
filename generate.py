@@ -140,7 +140,7 @@ def save_image_with_bboxes(image, bboxes, image_path, bbox_path):
     with open(bbox_path, 'w') as f:
         json.dump(bboxes, f)
 
-num_samples = 400
+num_samples = 2600
 output_dir = './output/train'
 
 if not os.path.exists(output_dir):
@@ -148,6 +148,6 @@ if not os.path.exists(output_dir):
 
 for i in range(num_samples):
     image, bboxes = create_image_with_symbols(symbol_folders, 20)
-    image_path = os.path.join(output_dir, f'image_{i}.png')
-    bbox_path = os.path.join(output_dir, f'image_{i}.json')
+    image_path = os.path.join(output_dir, f'image_{400 + i}.png')
+    bbox_path = os.path.join(output_dir, f'image_{400 + i}.json')
     save_image_with_bboxes(image, bboxes, image_path, bbox_path)
