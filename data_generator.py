@@ -17,7 +17,7 @@ class DataGenerator(Sequence):
         self.on_epoch_end()
 
     def __len__(self):
-        return int(np.floor(len(self.image_ids) / self.batch_size))
+        return int(np.floor(len(self.image_ids) // self.batch_size))
 
     def __getitem__(self, index):
         batch_ids = self.image_ids[index*self.batch_size:(index+1)*self.batch_size]
